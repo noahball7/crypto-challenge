@@ -1,0 +1,132 @@
+Challenge 2 writeup
+===================
+
+Exact answer:
+
+```text
+It's all in the mind, y'know?
+```
+
+Short version
+-------------
+
+The first line of `challenge2.txt` is Base64. It decodes to 74 bytes, but the
+bytes need to be inverted first: `byte ^ 0xff`.
+
+After inversion, the decoded bytes parse cleanly as:
+
+```text
+v1 | salt16 | iv12 | tag16 | ciphertext29
+```
+
+The exact seed phrase is:
+
+```text
+A drum break might shatter it!
+```
+
+Use:
+
+```text
+key = SHA256(seed || ":" || raw_salt)
+```
+
+Then decrypt with AES-256-GCM using:
+
+```text
+AAD = none
+salt = 4b97b65593e4b667d928333b5fc8d1d7
+iv   = e38fac4d6b4066d044d2d433
+tag  = 8a89b0472262537287b7cb40552be4a9
+ct   = fadf6ffa063fda8b8f9dbfb2e7e3a635d635a81dcc210b5682ed2515b7
+```
+
+That decrypts to:
+
+```text
+It's all in the mind, y'know?
+```
+
+Why this is the solution
+------------------------
+
+The clue phrase `A drum break might shatter it!` appears in the challenge trail
+and is also dialogue from Yellow Submarine. A transcript places that line in the
+same scene as the target phrase `It's all in the mind`, making the decrypted
+plaintext thematically self-confirming. [1]
+
+The exclamation mark is required. With seed `A drum break might shatter it!`,
+AES-GCM authentication succeeds. With seed `A drum break might shatter it`,
+authentication fails.
+
+The inverted first byte is `0x01`, which is naturally read as the version byte.
+The remaining 73 bytes fit standard AES-GCM field sizes:
+
+```text
+1 + 16 + 12 + 16 + 29 = 74
+```
+
+Since AES-GCM authenticates the ciphertext and tag, the successful decrypt is
+strong evidence that the parse, KDF, seed, IV, tag, ciphertext, and no-AAD choice
+are all correct.
+
+Verification script
+-------------------
+
+Run:
+
+```sh
+node scripts/verify_challenge2_solution.mjs
+```
+
+Expected output:
+
+```json
+{
+  "version": 1,
+  "layout": "v1|salt16|iv12|tag16|ciphertext29",
+  "seed": "A drum break might shatter it!",
+  "kdf": "SHA256(seed || ':' || raw_salt)",
+  "aad": null,
+  "salt": "4b97b65593e4b667d928333b5fc8d1d7",
+  "iv": "e38fac4d6b4066d044d2d433",
+  "tag": "8a89b0472262537287b7cb40552be4a9",
+  "ciphertext": "fadf6ffa063fda8b8f9dbfb2e7e3a635d635a81dcc210b5682ed2515b7",
+  "key": "3bad585259600e6697e483b26072697313d584dbbf446f17e26ca5c36b0690be",
+  "plaintext": "It's all in the mind, y'know?"
+}
+```
+
+Minimal verifier
+----------------
+
+```js
+import crypto from "node:crypto";
+import fs from "node:fs";
+
+const [line1] = fs.readFileSync("challenge2.txt", "utf8").trim().split(/\r?\n/);
+const raw = Buffer.from(line1, "base64");
+const b = Buffer.from(raw.map((x) => x ^ 0xff));
+
+const salt = b.subarray(1, 17);
+const iv = b.subarray(17, 29);
+const tag = b.subarray(29, 45);
+const ct = b.subarray(45);
+
+const seed = "A drum break might shatter it!";
+const key = crypto
+  .createHash("sha256")
+  .update(Buffer.concat([Buffer.from(seed), Buffer.from(":"), salt]))
+  .digest();
+
+const d = crypto.createDecipheriv("aes-256-gcm", key, iv);
+d.setAuthTag(tag);
+
+console.log(Buffer.concat([d.update(ct), d.final()]).toString("utf8"));
+```
+
+References
+----------
+
+[1] Yellow Submarine transcript:
+https://yellowsubmarine.fandom.com/wiki/Yellow_Submarine/Transcript

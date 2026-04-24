@@ -1,0 +1,26 @@
+.DS_Store
+**/.DS_Store
+
+.env
+.env.*
+!.env.example
+
+.venv/
+node_modules/
+__pycache__/
+*.py[cod]
+
+.playwright-mcp/
+*.log
+
+# Local/browser research captures.
+youtube_*.png
+new_video_*.png
+yt_snapshot*.md
+yt_after_more.md
+new_video_*.md
+docs/research/packed-aes-gcm/
+docs/research/theo-old-repos/
+
+# Large source artifacts should be linked from writeups instead of committed.
+*.pdf

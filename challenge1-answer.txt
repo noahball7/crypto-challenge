@@ -1,0 +1,71 @@
+Yep. The intended solve has three layers:
+
+**1. Decode the hint**
+
+The second line is ROT47:
+
+```text
+2 5@8 @? E96 >@@? @?46 D2:5i d`7_6`abbc47e4f2heh5a22`2aa_2df5dbee_`d6
+```
+
+ROT47 gives:
+
+```text
+a dog on the moon once said: 51f0e12334cf6c7a969d2aa1a220a57d5366015e
+```
+
+That 40-char value looks like SHA-1 or a Git commit hash. The trick is the “dog on the moon” clue: search GitHub for that hash / dogecoin context, and find commit `51f0e123...` in `t3dotgg/dogecoin-simulator`.
+
+That commit adds:
+
+```js
+oldDogHashSeed = "you-cant-teach-an-old-dog-new-hashes"
+```
+
+**2. Decode the first line as Base-23**
+
+The first line only uses `A` through `W`, exactly 23 symbols. Treat it as a base-23 integer with:
+
+```text
+A=0, B=1, ..., W=22
+```
+
+Convert that integer to bytes, and it becomes JSON:
+
+```json
+{
+  "v": 2,
+  "alg": "AES-256-GCM",
+  "kdf": "SHA256(oldDogHashSeed || 0x3a || salt)",
+  "salt": "fa8f189acd4827bbc23961e13b3ad065",
+  "iv": "887373c90e14bab57083711f",
+  "aad": "dogecoin-simulator:old-dog-hashes:v2",
+  "tag": "a3ad0b33f9b83384020c44feecb7db61",
+  "ct": "c0cb7c902bdcd681becd753aae1e939c275de058623caf73"
+}
+```
+
+**3. Derive the AES-GCM key and decrypt**
+
+Use:
+
+```text
+oldDogHashSeed = "you-cant-teach-an-old-dog-new-hashes"
+key = SHA256(oldDogHashSeed || ":" || salt)
+```
+
+That gives:
+
+```text
+de721e88ad8b383ed959e60d4f24e6e9a2ca312329609d754f035fa28d0be18d
+```
+
+Then AES-256-GCM decrypt with the JSON’s `iv`, `aad`, `tag`, and `ct`.
+
+Plaintext:
+
+```text
+xWeNeverMadeItToTheMooNx
+```
+
+The key insight I missed while brute-forcing was that the 40-char value was not meant to be cracked as SHA-1; it was a Git commit hash.

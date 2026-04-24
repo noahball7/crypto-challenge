@@ -1,0 +1,552 @@
+Challenge 2 process log
+=======================
+
+Purpose
+-------
+
+This is a record of the major paths tried while solving `challenge2.txt`.
+It is not a proof that every possible variant of each path is false. A "no hit"
+means the specific artifact strings, transforms, layouts, KDFs, and AAD choices
+tested in this workspace did not produce a valid plaintext.
+
+Final solved path
+-----------------
+
+The final solution was:
+
+```text
+Base64(line 1) -> invert each byte with byte ^ 0xff
+-> parse v1 | salt16 | iv12 | tag16 | ciphertext29
+-> key = SHA256("A drum break might shatter it!" || ":" || raw_salt)
+-> AES-256-GCM, no AAD
+-> It's all in the mind, y'know?
+```
+
+The reusable verifier is:
+
+```sh
+node scripts/verify_challenge2_solution.mjs
+```
+
+Path 0: Decode the obvious hint
+-------------------------------
+
+What was tried:
+
+- Treat line 2 as a classical text encoding.
+- ROT47 decoded line 2 to:
+
+```text
+Where it all begaN_0mpxB5iVQ
+```
+
+Interpretation:
+
+- `N_0mpxB5iVQ` was treated as a YouTube video ID.
+- The target video was Theo's `iPhone 11 UltraWide Skate Footage Demo`. [1]
+- The video description contained the exact clue phrase:
+
+```text
+A drum break might shatter it!
+```
+
+Result:
+
+- This was a correct clue path, but the decoded line 2 itself was not the answer.
+- It established that exact source strings mattered.
+
+Path 1: Basic line 1 format inspection
+--------------------------------------
+
+What was tried:
+
+- Base64-decode line 1.
+- Inspect decoded size and magic bytes.
+
+Observed:
+
+- Line 1 decodes to 74 bytes.
+- The bytes look random, not plain text, JSON, or a simple substitution.
+- 74 bytes is compatible with several structures, including a compact AEAD
+  envelope or an Ed25519/signature-shaped blob.
+
+Result:
+
+- Kept modern authenticated encryption and signature formats as leading
+  hypotheses.
+- The final solve kept the Base64 read, but added byte inversion before parsing.
+
+Path 2: Broad passphrase-based crypto
+-------------------------------------
+
+What was tried:
+
+- Candidate strings from the video, Yellow Submarine, Theo context, Glasswing,
+  Mythos, OpenBSD, timestamps, and IDs.
+- Common AEAD layouts:
+
+```text
+nonce12 | ciphertext | tag16
+salt8   | nonce12 | ciphertext | tag16
+salt16  | nonce12 | ciphertext | tag16
+tag16   | nonce12 | ciphertext
+tag16   | ciphertext | nonce12
+```
+
+- AES-GCM and ChaCha20-Poly1305.
+- Key derivations including raw SHA-256, salted SHA-256, PBKDF2, and scrypt.
+- Empty and candidate AAD strings.
+
+Main scripts:
+
+```text
+challenge2_probe.mjs
+challenge2_probe_v2.mjs
+challenge2-candidates-active.txt
+challenge2-candidates-archive.md
+```
+
+Result:
+
+- Multiple probe rounds produced no authenticated plaintext.
+- This path was directionally right, but the important missing operation was
+  byte inversion and the important missing layout was tag-before-ciphertext.
+
+Path 3: Challenge 1 continuity
+------------------------------
+
+What was tried:
+
+- Compare against the solved challenge 1 structure.
+- Reuse the idea that line 2 gives an exact artifact/string and line 1 is
+  AES-256-GCM.
+- Try `SHA256(seed || ":" || salt)` and AAD-bearing variants, because challenge
+  1 used that pattern.
+
+Result:
+
+- This was useful structurally, but challenge 1's actual seed, plaintext, repo
+  strings, and AAD did not solve challenge 2.
+- The final KDF did reuse the challenge-1-style salted SHA-256 pattern.
+- The final solve differed by using no AAD and by placing the tag before the
+  ciphertext after inversion.
+
+Path 4: Yellow Submarine clue branch
+------------------------------------
+
+What was tried:
+
+- Follow `A drum break might shatter it!` into Yellow Submarine.
+- Inspect nearby dialogue for key material and operation hints.
+- Candidate themes included:
+
+```text
+Beatlemania
+glass delusion
+Beatle-proof
+Nothing is Beatle-proof
+Ringo
+drumsticks
+hole in my pocket
+Sea of Holes
+They're decanting
+It's all in the mind
+```
+
+External grounding:
+
+- A transcript places `A drum break might shatter it` in the same late scene
+  as the hole-in-pocket action. [2]
+- The same transcript has the earlier car-color line `It's all in the mind`,
+  which became the decrypted plaintext. [2]
+
+Result:
+
+- The broad candidate/theme tests did not hit.
+- The branch was ultimately correct because the exact seed phrase came from it,
+  and the plaintext confirmed the same movie source.
+
+Path 5: Beatlemania / glass delusion / AI psychosis
+---------------------------------------------------
+
+What was tried:
+
+- Interpret the challenge's "specific mental illness" clue.
+- Candidate interpretations:
+
+```text
+Beatlemania
+glass delusion
+AI psychosis
+nerd sniped
+AI-pilled
+```
+
+Why it seemed plausible:
+
+- Yellow Submarine points to The Beatles.
+- The scene involves glass and shattering.
+- Theo's surrounding context involved AI/security/mythos language.
+
+Result:
+
+- These were useful thematic lanes, but none produced an authenticated decrypt
+  as seed/AAD material under the layouts tested.
+- In hindsight, the simpler exact source phrase was better than the inferred
+  medical/thematic labels.
+
+Path 6: "Where it all began" / video metadata
+---------------------------------------------
+
+What was tried:
+
+- Treat `Where it all began` literally.
+- Inspect the linked video, description, visible metadata, title, channel, dates,
+  skater handles, location strings, and first/last-frame style artifacts.
+- Candidate strings included the video ID, title, channel, upload context,
+  `Ferry Building`, `San Francisco`, `fakiebigfoot`, and related description
+  terms.
+
+Result:
+
+- The video description produced the key clue phrase.
+- The other metadata strings did not produce a decrypt in the tested AES-GCM
+  layouts.
+
+Path 7: Theo-controlled GitHub/gist artifact search
+---------------------------------------------------
+
+What was tried:
+
+- Search for a challenge-1-like external artifact: commit hashes, repo strings,
+  gists, or exact text controlled by Theo.
+- Check old Theo gist/repo patterns and the `T3-Content/skatebench` lead because
+  the clue video was a skateboarding video.
+- Test repo names, branch names, commit hashes, benchmark names, and skate trick
+  answers as seeds/AADs.
+
+Result:
+
+- No strong challenge-2-specific GitHub artifact was found.
+- Tested GitHub/gist/skatebench strings did not produce an authenticated
+  decrypt.
+- This was reasonable because challenge 1 used a commit artifact, but challenge
+  2 did not need that extra artifact.
+
+Path 8: Mythos / Glasswing / Anthropic security branch
+------------------------------------------------------
+
+What was tried:
+
+- Follow Theo's contemporary Mythos/Glasswing/security context.
+- Track strings around `Project Glasswing`, `Claude Mythos Preview`, `Greta oto`,
+  crypto-library report commitments, `TLS`, `AES-GCM`, and `SSH`.
+- Test those terms and commitment hashes as candidate seed/AAD material.
+
+External grounding:
+
+- Anthropic's Project Glasswing page and appendix connect the Glasswing name to
+  `Claude Mythos Preview` and the glasswing butterfly metaphor. [3]
+- Anthropic's Red Team post mentions crypto-library work involving `TLS`,
+  `AES-GCM`, and `SSH`. [4]
+
+Result:
+
+- The branch matched the broader April 2026 context and the `glass` theme, but
+  it did not produce the challenge 2 plaintext under tested variants.
+- Final solve did use AES-GCM, but not from a Mythos/Glasswing artifact string.
+
+Path 9: OpenBSD SACK / signify / Ed25519 branch
+-----------------------------------------------
+
+What was tried:
+
+- Investigate the user-provided OpenBSD errata/patch lead:
+
+```text
+OpenBSD 7.8 errata 025
+025_sack.patch.sig
+tcp_input.c
+snd_holes
+sackhole
+```
+
+- Compare `challenge2.txt` line 1 to OpenBSD `signify` signatures.
+- Fetch and parse `openbsd-78-base.pub` and `025_sack.patch.sig`.
+- Test Ed25519/signature-style interpretations using OpenBSD, GitHub SSH keys,
+  and related candidate messages.
+
+Main script:
+
+```text
+scripts/challenge2_ed25519_verify.mjs
+```
+
+External grounding:
+
+- OpenBSD publishes `openbsd-78-base.pub` and patch signatures under the 7.8
+  patch directory. [5]
+
+Result:
+
+- A real OpenBSD signify signature decodes as:
+
+```text
+Ed | keyid8 | signature64
+```
+
+- Challenge 2 line 1 also decodes to 74 bytes, but the first two bytes are
+  `fe b4`, not `Ed`.
+- That ruled out a plain OpenBSD signify signature as-is.
+- In hindsight, this branch almost found the right transform: `fe b4` inverted
+  gives `01 4b`, where `01` is the final version byte and `4b...` begins the
+  salt.
+
+Path 10: Ringo-hole operations
+------------------------------
+
+What was tried:
+
+- Treat the Yellow Submarine scene as an operation clue rather than just a
+  passphrase clue.
+- Test "hole" operations:
+
+```text
+remove bytes
+extract bytes
+inside/outside splits
+position selection from SHA-256(seed)
+base64 text holes
+raw byte holes
+```
+
+- Use seed phrases such as `hole`, `hole in my pocket`, `I've got a hole in my
+  pocket.`, `Sea of Holes`, and `Nothing is Beatle-proof`.
+
+Main script:
+
+```text
+scripts/challenge2_hole_probe.mjs
+```
+
+Result:
+
+- No readable text, JSON, OpenSSL/age-style magic, or real signature output was
+  found.
+- The branch was conceptually useful because it kept attention on transforms,
+  but the winning transform was whole-byte inversion, not hole extraction.
+
+Path 11: Transcript timing / half-hole pass
+-------------------------------------------
+
+What was tried:
+
+- Use timed Yellow Submarine transcript lines as operation hints.
+- Important local transcript timings included:
+
+```text
+1:15:44.916  A drum break might shatter it.
+1:15:49.921  I've got a hole in my pocket.
+1:16:06.604  They're decanting.
+1:27:08.265  Half a hole, anyway. I gave the rest to Jeremy.
+1:27:13.979  Fix it to keep his mind from wandering.
+```
+
+- Test exact half/split operations:
+
+```text
+74 bytes -> 37 / 37
+Base64 text -> 50 / 50
+even / odd shards
+apparent 64-byte signature tail -> 32 / 32
+```
+
+Result:
+
+- No readable plaintext or obvious magic header.
+- This overfit the "half a hole" line; the final plaintext did echo the
+  `mind` clue, but not through a half-split operation.
+
+Path 12: YouTube corrections card
+---------------------------------
+
+What was tried:
+
+- Inspect YouTube page data and player responses for the linked video.
+- Follow a `View corrections` card surfaced by the page/player.
+- Test correction-related strings and deltas:
+
+```text
+drum beat -> drum break
+coloured jelly -> coloured telly
+Any old iron -> Any old Ein
+beat->break
+jelly->telly
+iron->Ein
+View corrections
+```
+
+- Try direct `youtubei/v1/player` and `youtubei/v1/next` requests across several
+  client contexts.
+
+Result:
+
+- The visible card shell was real, but the accessible logged-out payloads did
+  not expose the correction rows.
+- Correction strings and card metadata did not produce an authenticated decrypt.
+- This remained a good artifact path, but it was not necessary for the final
+  solution.
+
+Path 13: Generic transform / non-AES probes
+-------------------------------------------
+
+What was tried:
+
+- Reverse bytes and reverse Base64 text.
+- XOR and simple byte transforms.
+- Decode line 1 as base-N using visible alphabets.
+- Reassemble shards and test printable/magic headers.
+- Try non-AES ideas where the clue might imply "break", "shatter", or "hole".
+
+Main scripts:
+
+```text
+scripts/challenge2_operations_probe.mjs
+scripts/challenge2_non_aes_probe.mjs
+```
+
+Result:
+
+- No high-confidence readable output.
+- These scripts did classify the 74-byte signature-like length repeatedly, which
+  fed the signify branch.
+- They did not include the exact final whole-buffer inversion plus AEAD parse.
+
+Path 14: Amen break / SHAttered theory
+--------------------------------------
+
+What was tried:
+
+- Interpret `A drum break might shatter it!` as a music/crypto pun.
+- Test direct phrases around `Amen break`, `The Winstons`, and `Amen Brother`.
+- Try RC4 with SHA-1-derived keys, SHA-1 hex-as-ASCII, AES-CTR with SHA-1
+  truncation, SHA-256 phrase keys, zero IV, and IV variants.
+
+Result:
+
+- No readable plaintext, no flag-like output, and no high-confidence hit.
+- The direct theory was rejected, though "drum break" still mattered as the
+  exact seed phrase.
+
+Path 15: Cryptopals `YELLOW SUBMARINE`
+--------------------------------------
+
+What was tried:
+
+- Treat Yellow Submarine as a pointer to the canonical Cryptopals AES key:
+
+```text
+YELLOW SUBMARINE
+```
+
+- Test AES-CTR with zero IV using OpenSSL/big-endian and Cryptopals
+  little-endian nonce/counter variants.
+- Test packed AES-GCM with `YELLOW SUBMARINE` variants as raw 16-byte keys,
+  SHA-256 keys, salted SHA-256 keys, and PBKDF2 keys.
+
+Result:
+
+- No readable plaintext and no authenticated AES-GCM hit.
+- This was a tempting crypto-cultural association, but not the key.
+
+Final pivot: inversion and tag-before-ciphertext
+------------------------------------------------
+
+What changed:
+
+- Instead of treating the decoded bytes as direct ciphertext/signature data,
+  invert every byte:
+
+```text
+raw[0..] ^ 0xff
+```
+
+Why it made sense after the fact:
+
+- Raw first bytes:
+
+```text
+fe b4 ...
+```
+
+- Inverted first bytes:
+
+```text
+01 4b ...
+```
+
+- `01` works as a version byte.
+- The remaining bytes fit exactly:
+
+```text
+salt16 | iv12 | tag16 | ciphertext29
+```
+
+The final parse:
+
+```text
+v    = 01
+salt = 4b97b65593e4b667d928333b5fc8d1d7
+iv   = e38fac4d6b4066d044d2d433
+tag  = 8a89b0472262537287b7cb40552be4a9
+ct   = fadf6ffa063fda8b8f9dbfb2e7e3a635d635a81dcc210b5682ed2515b7
+```
+
+The exact seed:
+
+```text
+A drum break might shatter it!
+```
+
+The exact KDF:
+
+```text
+SHA256(seed || ":" || raw_salt)
+```
+
+The result:
+
+```text
+It's all in the mind, y'know?
+```
+
+Process takeaways
+-----------------
+
+- The right source string was already in the first strong clue path.
+- Broad semantic expansion was less useful than exact phrase preservation.
+- AES-GCM authentication was the best filter: plausible candidates without a
+  valid tag were rejected.
+- Challenge 1 gave the right KDF shape, but not the right AAD behavior or
+  envelope layout.
+- The OpenBSD/signify branch was false as a signature theory, but the failed
+  `fe b4` marker became meaningful once byte inversion was tried.
+
+References
+----------
+
+[1] YouTube, `iPhone 11 UltraWide Skate Footage Demo`:
+https://www.youtube.com/watch?v=N_0mpxB5iVQ
+
+[2] Yellow Submarine transcript:
+https://yellowsubmarine.fandom.com/wiki/Yellow_Submarine/Transcript
+
+[3] Anthropic, `Project Glasswing: Securing critical software for the AI era`:
+https://www.anthropic.com/glasswing
+
+[4] Anthropic, `Assessing Claude Mythos Preview's cybersecurity capabilities`:
+https://red.anthropic.com/2026/mythos-preview/
+
+[5] OpenBSD 7.8 errata and mirrored 7.8 patch directory:
+https://www.openbsd.org/errata78.html
+https://openbsd.c3sl.ufpr.br/pub/OpenBSD/patches/7.8/common/
