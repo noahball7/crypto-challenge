@@ -82,12 +82,12 @@ Observed context:
 - Search results surfaced an archived Theo/X snippet from December 29, 2025: `An old friend started to develop AI psychosis and as I read her logs I realize 4o enabled most of it.` The archive URL timed out/429ed when opened, so treat this as search-snippet evidence rather than fully reverified page text.
 - A Rosetta transcript of Theo's `GPT-5.1 is built for normies` includes Theo discussing `GPT psychosis or AI psychosis`, saying people may spiral when models misuse undefined terms. This supports `AI psychosis` as a phrase in Theo's recent AI vocabulary.
 - A Rewiz transcript for Theo's April 10, 2026 video `I'm scared about the future of security` places Theo in a recent AI/security/puzzle context: AI-assisted vulnerability research, DEF CON puzzle/CTF stories, Goldbug-style crypto puzzles, and model rerouting for mental-health/security risk.
-- I did not find a recent Theo-specific Beatles post. The Beatles signal appears to come from the old YouTube video's description and Yellow Submarine, not from recent Theo social context.
+- A later manual pass over Theo's X profile surfaced two Beatles-related tweets. I treated them as useful context for why the Yellow Submarine branch was worth taking seriously, not as direct cryptographic key material.
 
 Interpretation:
 
 - `AI psychosis` is strongly Theo-contextual, but it does not explain the YouTube description phrase.
-- `Beatlemania` explains the Beatles clue and the mental-illness wording, but it is not directly present in the checked Theo/X metadata.
+- `Beatlemania` explains the Beatles clue and the mental-illness wording, but the tweets were only contextual support; the direct clue still came from the old YouTube video's description and the Yellow Submarine scene.
 - The puzzle likely wants the solver to combine Theo's tweet framing with the video-description clue rather than stay entirely inside recent AI discourse.
 
 ## Candidate 5-Step Implications
@@ -126,5 +126,5 @@ Gaps:
 
 - X content is partially inaccessible without JS/auth; the tweet body and engagement metadata were taken from search/X snippets rather than a fully rendered X page.
 - YouTube comments were not exhaustively retrieved; only page-embedded microformat comments were observed.
-- No first-party recent Theo Beatles post was found in quick search.
+- The later manual X-profile pass found two Beatles-related tweets, but no direct seed phrase or cipher parameter.
 - The research does not identify the cipher/KDF/nonce layout for line 1; it only narrows clue-derived candidate key material.

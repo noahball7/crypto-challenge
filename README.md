@@ -32,6 +32,23 @@ More detail:
 - [Challenge 2 process log](challenge2-process.txt)
 - [Challenge 2 prompt](challenge2.txt)
 
+## Why This Was Interesting
+
+This was my first time working through this style of multi-step crypto puzzle,
+so the process mattered almost as much as the final plaintext. The strongest
+side trails were:
+
+- Following Theo/X context and finding two Beatles-related tweets, which made
+  the Yellow Submarine branch feel less random.
+- Chasing the Project Glasswing and OpenBSD route through Anthropic's public
+  security material, then testing whether the 74-byte blob was an
+  OpenBSD/signify-shaped artifact.
+- Checking the classic `YELLOW SUBMARINE` Cryptopals method before ruling it
+  out as a direct solve path.
+
+Those branches did not all produce the answer, but they shaped the search and
+helped separate real clues from tempting coincidences.
+
 ## Project Glasswing / Mythos Research
 
 The Glasswing/Mythos trail was an important research branch because it connected

@@ -9,6 +9,16 @@ It is not a proof that every possible variant of each path is false. A "no hit"
 means the specific artifact strings, transforms, layouts, KDFs, and AAD choices
 tested in this workspace did not produce a valid plaintext.
 
+Personal context
+----------------
+
+This was my first time working through this style of multi-step crypto puzzle,
+so I kept the process log even when a branch turned out to be wrong. The most
+interesting non-final branches were the Project Glasswing/OpenBSD path, the X
+profile search that surfaced two Beatles-related tweets, and the Cryptopals
+`YELLOW SUBMARINE` check. They were useful because they made the search more
+testable, even when they did not decrypt line 1.
+
 Final solved path
 -----------------
 
