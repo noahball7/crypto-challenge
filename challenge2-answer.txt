@@ -51,9 +51,20 @@ Why this is the solution
 ------------------------
 
 The clue phrase `A drum break might shatter it!` appears in the challenge trail
-and is also dialogue from Yellow Submarine. A transcript places that line in the
-same scene as the target phrase `It's all in the mind`, making the decrypted
-plaintext thematically self-confirming. [1]
+and is also dialogue from Yellow Submarine. The decrypted plaintext also appears
+in Yellow Submarine, making the output thematically self-confirming. [1]
+
+GPT Pro was the run that found the authenticated decrypt. During the search, it
+noticed a noncanonical Base64 angle: preserving the pad bits makes a 75-byte
+payload starting with `03`, which looked like a possible versioned AEAD envelope.
+That thread shifted attention toward `T3-Content/skatebench`, commit
+`6058ed9...`, PR #5, hidden/bidirectional Unicode, `signatureHash`, and raw JSON
+line-separator bytes as a possible locator surface.
+
+The final hit in `gpt-pro.md` came from applying the "switch"/inversion idea to
+the normal 74-byte Base64 decode instead: `byte ^ 0xff`, then parse
+`not-v1-tagct`, use the exact seed `A drum break might shatter it!`, no AAD, and
+AES-256-GCM.
 
 The exclamation mark is required. With seed `A drum break might shatter it!`,
 AES-GCM authentication succeeds. With seed `A drum break might shatter it`,

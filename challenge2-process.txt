@@ -19,6 +19,32 @@ profile search that surfaced two Beatles-related tweets, and the Cryptopals
 `YELLOW SUBMARINE` check. They were useful because they made the search more
 testable, even when they did not decrypt line 1.
 
+Solver provenance
+-----------------
+
+GPT Pro was the run that actually found the authenticated plaintext. The full
+transcript is in `gpt-pro.md`.
+
+One visible in-flight update from that run captured the right search pressure:
+
+```text
+One concrete update: preserving the noncanonical Base64 pad bits yields a
+75-byte payload starting with 03, making a versioned AEAD envelope more
+plausible than the raw 74-byte decode.
+
+The search is shifting toward T3-Content/skatebench: commit 6058ed9..., PR #5,
+hidden/bidirectional Unicode, and the test signatureHash look like the missing
+locator surface.
+
+Newly useful detail: the raw skatebench JSON may contain line-separator
+characters, so invisible bytes could matter. Direct tre/laser signature-hash
+seeds still fail under both leading AEAD parses.
+```
+
+That status was useful, but it was not the final decrypt. The final GPT Pro hit
+returned to the normal 74-byte Base64 decode, applied byte inversion, and parsed
+the result as `v1 | salt16 | iv12 | tag16 | ciphertext29`.
+
 Final solved path
 -----------------
 
@@ -118,7 +144,7 @@ challenge2-candidates-archive.md
 
 Result:
 
-- Multiple probe rounds produced no authenticated plaintext.
+- Earlier local probe rounds produced no authenticated plaintext.
 - This path was directionally right, but the important missing operation was
   byte inversion and the important missing layout was tag-before-ciphertext.
 
@@ -430,7 +456,9 @@ Result:
 - No high-confidence readable output.
 - These scripts did classify the 74-byte signature-like length repeatedly, which
   fed the signify branch.
-- They did not include the exact final whole-buffer inversion plus AEAD parse.
+- The earlier local scripts did not include the exact final whole-buffer
+  inversion plus AEAD parse. GPT Pro later tested the exact inversion plus
+  `v1 | salt16 | iv12 | tag16 | ciphertext29` shape.
 
 Path 14: Amen break / SHAttered theory
 --------------------------------------
@@ -474,6 +502,8 @@ Final pivot: inversion and tag-before-ciphertext
 
 What changed:
 
+- GPT Pro tried the operation hinted by `switch` / inversion against the normal
+  Base64-decoded bytes.
 - Instead of treating the decoded bytes as direct ciphertext/signature data,
   invert every byte:
 
@@ -530,6 +560,12 @@ The result:
 It's all in the mind, y'know?
 ```
 
+The exact GPT Pro hit shape was:
+
+```text
+HIT not-v1-tagct A drum break might shatter it!  b"It's all in the mind, y'know?"
+```
+
 Process takeaways
 -----------------
 
@@ -539,6 +575,8 @@ Process takeaways
   valid tag were rejected.
 - Challenge 1 gave the right KDF shape, but not the right AAD behavior or
   envelope layout.
+- The noncanonical Base64 / skatebench / hidden-Unicode lead was useful search
+  pressure, but the authenticated hit came from the inverted 74-byte decode.
 - The OpenBSD/signify branch was false as a signature theory, but the failed
   `fe b4` marker became meaningful once byte inversion was tried.
 

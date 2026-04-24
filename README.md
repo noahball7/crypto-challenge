@@ -16,9 +16,11 @@ The short solve chain:
 1. Decode the second line of `challenge2.txt` with ROT47.
 2. Follow the resulting YouTube ID to Theo's first video.
 3. Preserve the exact clue phrase: `A drum break might shatter it!`
-4. Base64-decode the first line, then invert each byte with `byte ^ 0xff`.
-5. Parse the result as `v1 | salt16 | iv12 | tag16 | ciphertext29`.
-6. Derive `SHA256(seed || ":" || raw_salt)` and decrypt with AES-256-GCM.
+4. GPT Pro interpreted the later `switch laser` / inverted clue as an operation
+   on line 1.
+5. Base64-decode the first line, then invert each byte with `byte ^ 0xff`.
+6. Parse the result as `v1 | salt16 | iv12 | tag16 | ciphertext29`.
+7. Derive `SHA256(seed || ":" || raw_salt)` and decrypt with AES-256-GCM.
 
 Run the verifier:
 
@@ -31,6 +33,7 @@ More detail:
 - [Challenge 2 writeup](challenge2-answer.txt)
 - [Challenge 2 process log](challenge2-process.txt)
 - [Challenge 2 prompt](challenge2.txt)
+- [GPT Pro solve transcript](gpt-pro.md)
 
 ## Why This Was Interesting
 
@@ -45,6 +48,9 @@ side trails were:
   OpenBSD/signify-shaped artifact.
 - Checking the classic `YELLOW SUBMARINE` Cryptopals method before ruling it
   out as a direct solve path.
+- Watching GPT Pro make the decisive final move: preserve the odd Base64
+  details, test the inverted byte stream, parse `v1` with tag-before-ciphertext,
+  and get the AES-GCM authentication hit with the exact video phrase.
 
 Those branches did not all produce the answer, but they shaped the search and
 helped separate real clues from tempting coincidences.
