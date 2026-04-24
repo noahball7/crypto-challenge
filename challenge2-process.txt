@@ -23,7 +23,7 @@ Solver provenance
 -----------------
 
 GPT Pro was the run that actually found the authenticated plaintext. The full
-transcript is in `gpt-pro.md`.
+cleaned solve note is in `gpt-pro.md`.
 
 One visible in-flight update from that run captured the right search pressure:
 

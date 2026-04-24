@@ -33,7 +33,7 @@ More detail:
 - [Challenge 2 writeup](challenge2-answer.txt)
 - [Challenge 2 process log](challenge2-process.txt)
 - [Challenge 2 prompt](challenge2.txt)
-- [GPT Pro solve transcript](gpt-pro.md)
+- [GPT Pro cleaned solve notes](gpt-pro.md)
 
 ## Why This Was Interesting
 
